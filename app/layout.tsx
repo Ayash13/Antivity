@@ -4,6 +4,7 @@ import { Ubuntu } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/auth-context";
 import { SplashScreen } from "@/components/splash-screen";
+import { PWAStatusBar } from "@/components/pwa-status-bar";
 
 const ubuntu = Ubuntu({
   subsets: ["latin"],
@@ -12,7 +13,7 @@ const ubuntu = Ubuntu({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://antivity.app"), // change if you have a different domain
+  metadataBase: new URL("https://antivity.vercel.app"),
   applicationName: "Antivity",
   title: {
     default: "Antivity — Walk with purpose",
@@ -52,7 +53,7 @@ export const metadata: Metadata = {
     title: "Antivity — Walk with purpose",
     description:
       "Antivity gives more purpose to your walk. Discover thing, notice your surroundings, and make every step more meaningful.",
-    url: "https://antivity.app",
+    url: "https://antivity.vercel.app",
     images: [
       {
         url: "/logo/antjvity-logo.webp",
@@ -101,6 +102,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/logo/favicon.webp" />
       </head>
       <body>
+        <PWAStatusBar />
         <AuthProvider>
           <SplashScreen>{children}</SplashScreen>
         </AuthProvider>
