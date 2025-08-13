@@ -40,7 +40,7 @@ export function BottomNav({
           <div
             className="flex items-center justify-between px-6 pr-0 pl-0 pt-3 pb-10"
             style={{
-              paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)",
+              paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 20px)",
             }}
           >
             {items.map((it, idx) => {
