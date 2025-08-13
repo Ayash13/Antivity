@@ -1,0 +1,42 @@
+{
+  "name": "Antivity — Walk with purpose",
+  "short_name": "Antivity",
+  "description": "Antivity gives more purpose to your walk. Discover thing, notice your surroundings, and make every step more meaningful.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#E2F9FF",
+  "theme_color": "#6CD3FF",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["health", "fitness", "lifestyle"],
+  "icons": [
+    {
+      "src": "/logo/favicon.webp",
+      "sizes": "192x192",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo/favicon.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Walking",
+      "short_name": "Walk",
+      "description": "Begin your mindful walking journey",
+      "url": "/main",
+      "icons": [
+        {
+          "src": "/logo/favicon.webp",
+          "sizes": "96x96",
+          "type": "image/webp"
+        }
+      ]
+    }
+  ]
+}
