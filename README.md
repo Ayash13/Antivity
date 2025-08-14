@@ -80,6 +80,10 @@ NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
 \`\`\`
 
+# Gemini AI API
+
+GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_api_keys
+
 ### Firebase Setup
 
 1. **Create a Firebase Project**
