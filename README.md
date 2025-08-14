@@ -1,9 +1,9 @@
-# Antjvity — Walk with Purpose
+# Antivity — Walk with Purpose
 
 <div align="center">
-  <img src="public/logo/antjvity-logo.webp" alt="Antjvity Logo" width="300" />
+  <img src="public/logo/Antivity-logo.webp" alt="Antivity Logo" width="300" />
   
-  **Antjvity gives more purpose to your walk. Discover things, notice your surroundings, and make every step more meaningful.**
+  **Antivity gives more purpose to your walk. Discover things, notice your surroundings, and make every step more meaningful.**
   
   [![Next.js](https://img.shields.io/badge/Next.js-14.2.25-black?style=flat-square&logo=next.js)](https://nextjs.org/)
   [![React](https://img.shields.io/badge/React-19-blue?style=flat-square&logo=react)](https://reactjs.org/)
@@ -14,7 +14,7 @@
 
 ## 🌟 Overview
 
-Antjvity is a gamified walking companion that transforms ordinary walks into purposeful adventures. Users receive randomized search missions (find a cat, spot a pink car, discover a unique tree) that encourage mindful observation of their surroundings. The app combines fitness tracking, journaling, and social sharing to create a comprehensive walking experience.
+Antivity is a gamified walking companion that transforms ordinary walks into purposeful adventures. Users receive randomized search missions (find a cat, spot a pink car, discover a unique tree) that encourage mindful observation of their surroundings. The app combines fitness tracking, journaling, and social sharing to create a comprehensive walking experience.
 
 ## ✨ Features
 
@@ -110,8 +110,8 @@ GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_api_keys
 
 1. **Clone the repository**
    \`\`\`bash
-   git clone https://github.com/Ayash13/antjvity.git
-   cd antjvity
+   git clone https://github.com/Ayash13/Antivity.git
+   cd Antivity
    \`\`\`
 
 2. **Install dependencies**
@@ -246,7 +246,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 \`\`\`
 MIT License
 
-Copyright (c) 2025 Antjvity
+Copyright (c) 2025 Antivity
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
