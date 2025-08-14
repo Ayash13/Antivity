@@ -1,193 +1,209 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useEffect, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
-import { auth } from "@/lib/firebase/client"
-import { getUserProfile, updateUserProfile, type UserProfile } from "@/lib/firebase/firestore"
-import { uploadProfilePhoto } from "@/lib/firebase/storage"
-import { fileToBase64, validateImageFile } from "@/lib/image-upload"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { ChevronLeft, Camera, Loader2 } from "lucide-react"
-import { updateProfile } from "firebase/auth"
-import { cn } from "@/lib/utils"
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { auth } from "@/lib/firebase/client";
+import {
+  getUserProfile,
+  updateUserProfile,
+  type UserProfile,
+} from "@/lib/firebase/firestore";
+import { uploadProfilePhoto } from "@/lib/firebase/storage";
+import { fileToBase64, validateImageFile } from "@/lib/image-upload";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Camera, Loader2 } from "lucide-react";
+import Image from "next/image";
+import { updateProfile } from "firebase/auth";
+import { cn } from "@/lib/utils";
 
 export default function EditProfilePage() {
-  const router = useRouter()
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string>("")
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string>("");
 
-  const [username, setUsername] = useState("")
-  const [bio, setBio] = useState("")
-  const [currentPhotoURL, setCurrentPhotoURL] = useState<string | null>(null)
-  const [avatarKind, setAvatarKind] = useState<UserProfile["avatarKind"]>("image")
+  const [username, setUsername] = useState("");
+  const [bio, setBio] = useState("");
+  const [currentPhotoURL, setCurrentPhotoURL] = useState<string | null>(null);
+  const [avatarKind, setAvatarKind] =
+    useState<UserProfile["avatarKind"]>("image");
 
-  const [preview, setPreview] = useState<string | null>(null)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [tempAvatarSelection, setTempAvatarSelection] = useState<string | null>(null)
+  const [preview, setPreview] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [tempAvatarSelection, setTempAvatarSelection] = useState<string | null>(
+    null
+  );
 
-  const [showPhotoOptions, setShowPhotoOptions] = useState(false)
-  const [showAvatarPicker, setShowAvatarPicker] = useState(false)
+  const [showPhotoOptions, setShowPhotoOptions] = useState(false);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
     async function load() {
       try {
-        const u = auth?.currentUser
+        const u = auth?.currentUser;
         if (!u) {
-          router.push("/sign-in")
-          return
+          router.push("/sign-in");
+          return;
         }
-        const p = await getUserProfile(u.uid)
+        const p = await getUserProfile(u.uid);
         if (!p) {
           // If no profile doc exists yet, seed basic values from auth
-          setUsername(u.displayName || u.email?.split("@")[0] || "")
-          setBio("")
-          setCurrentPhotoURL(u.photoURL ?? null)
-          setAvatarKind("image")
-          setPreview(u.photoURL ?? null)
+          setUsername(u.displayName || u.email?.split("@")[0] || "");
+          setBio("");
+          setCurrentPhotoURL(u.photoURL ?? null);
+          setAvatarKind("image");
+          setPreview(u.photoURL ?? null);
         } else {
-          setUsername(p.username || p.displayName || "")
-          setBio((p.bio ?? "") as string)
-          setCurrentPhotoURL(p.photoURL ?? null)
-          setAvatarKind(p.avatarKind)
-          setPreview(p.photoURL ?? null)
+          setUsername(p.username || p.displayName || "");
+          setBio((p.bio ?? "") as string);
+          setCurrentPhotoURL(p.photoURL ?? null);
+          setAvatarKind(p.avatarKind);
+          setPreview(p.photoURL ?? null);
         }
       } catch (e) {
-        console.error(e)
-        setError("Failed to load profile.")
+        console.error(e);
+        setError("Failed to load profile.");
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) setLoading(false);
       }
     }
-    load()
+    load();
     return () => {
-      cancelled = true
-    }
-  }, [router])
+      cancelled = true;
+    };
+  }, [router]);
 
   function onPickPhoto() {
-    setShowPhotoOptions(true)
+    setShowPhotoOptions(true);
   }
 
   function openUpload() {
-    setShowPhotoOptions(false)
-    fileInputRef.current?.click()
+    setShowPhotoOptions(false);
+    fileInputRef.current?.click();
   }
 
   function openAvatarPicker() {
-    setShowPhotoOptions(false)
-    setTempAvatarSelection(preview && preview.startsWith("/avatar/") ? preview : "/avatar/ava1.webp")
-    setShowAvatarPicker(true)
+    setShowPhotoOptions(false);
+    setTempAvatarSelection(
+      preview && preview.startsWith("/avatar/") ? preview : "/avatar/ava1.webp"
+    );
+    setShowAvatarPicker(true);
   }
 
   function closeAvatarPicker() {
-    setShowAvatarPicker(false)
+    setShowAvatarPicker(false);
   }
 
   async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const v = validateImageFile(file)
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const v = validateImageFile(file);
     if (!v.isValid) {
-      setError(v.error || "Invalid image")
-      e.target.value = ""
-      return
+      setError(v.error || "Invalid image");
+      e.target.value = "";
+      return;
     }
-    setError("")
-    setSelectedFile(file)
+    setError("");
+    setSelectedFile(file);
     try {
-      const base64 = await fileToBase64(file)
-      setPreview(base64)
-      setAvatarKind("image")
-      setShowAvatarPicker(false)
-      setShowPhotoOptions(false)
+      const base64 = await fileToBase64(file);
+      setPreview(base64);
+      setAvatarKind("image");
+      setShowAvatarPicker(false);
+      setShowPhotoOptions(false);
     } catch {
-      setError("Failed to process image.")
-      setSelectedFile(null)
+      setError("Failed to process image.");
+      setSelectedFile(null);
     } finally {
-      e.target.value = ""
+      e.target.value = "";
     }
   }
 
   function validateUsername(name: string): string | null {
-    const trimmed = name.trim()
-    if (trimmed.length < 3) return "Username must be at least 3 characters."
-    if (trimmed.length > 24) return "Username must be at most 24 characters."
-    if (!/^[a-zA-Z0-9_]+$/.test(trimmed)) return "Only letters, numbers, and underscores are allowed."
-    return null
+    const trimmed = name.trim();
+    if (trimmed.length < 3) return "Username must be at least 3 characters.";
+    if (trimmed.length > 24) return "Username must be at most 24 characters.";
+    if (!/^[a-zA-Z0-9_]+$/.test(trimmed))
+      return "Only letters, numbers, and underscores are allowed.";
+    return null;
   }
 
   async function onSave() {
-    setError("")
-    const u = auth?.currentUser
+    setError("");
+    const u = auth?.currentUser;
     if (!u) {
-      router.push("/sign-in")
-      return
+      router.push("/sign-in");
+      return;
     }
-    const usernameError = validateUsername(username)
+    const usernameError = validateUsername(username);
     if (usernameError) {
-      setError(usernameError)
-      return
+      setError(usernameError);
+      return;
     }
 
-    setSaving(true)
+    setSaving(true);
     try {
-      let newPhotoURL: string | null = null
+      let newPhotoURL: string | null = null;
 
       // 1) Upload new photo using Firebase Storage instead of free image host
       if (selectedFile) {
-        newPhotoURL = await uploadProfilePhoto(selectedFile, u.uid)
-      } else if (preview && preview !== currentPhotoURL && preview.startsWith("/avatar/")) {
-        // 2) If an avatar was selected (no file), persist the avatar path
-        newPhotoURL = preview
+        newPhotoURL = await uploadProfilePhoto(selectedFile, u.uid);
+      } else if (
+        preview &&
+        preview !== currentPhotoURL &&
+        preview.startsWith("https://firebasestorage.googleapis.com/")
+      ) {
+        newPhotoURL = preview;
       }
 
       // 3) Build updates
-      const updates: Partial<Omit<UserProfile, "uid" | "createdAt" | "updatedAt">> = {
+      const updates: Partial<
+        Omit<UserProfile, "uid" | "createdAt" | "updatedAt">
+      > = {
         username: username.trim(),
         displayName: username.trim(),
         bio: bio.trim(),
-      }
+      };
       if (newPhotoURL) {
-        updates.photoURL = newPhotoURL
-        updates.avatarKind = "image"
+        updates.photoURL = newPhotoURL;
+        updates.avatarKind = "image";
       }
 
       // 4) Firestore update
-      await updateUserProfile(u.uid, updates)
+      await updateUserProfile(u.uid, updates);
 
       // 5) Also update Firebase Auth profile for consistency
       await updateProfile(u, {
         displayName: username.trim(),
         photoURL: newPhotoURL ?? u.photoURL ?? undefined,
-      })
+      });
 
       // 6) Done - navigate back
-      router.push("/profile")
+      router.push("/profile");
     } catch (e: any) {
-      console.error(e)
-      setError(e?.message || "Failed to save changes.")
+      console.error(e);
+      setError(e?.message || "Failed to save changes.");
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
   function handleAvatarDone() {
     if (!tempAvatarSelection) {
-      setShowAvatarPicker(false)
-      return
+      setShowAvatarPicker(false);
+      return;
     }
-    setPreview(tempAvatarSelection)
-    setSelectedFile(null)
-    setAvatarKind("image")
-    setShowAvatarPicker(false)
+    setPreview(tempAvatarSelection);
+    setSelectedFile(null);
+    setAvatarKind("image");
+    setShowAvatarPicker(false);
   }
 
   return (
@@ -215,9 +231,17 @@ export default function EditProfilePage() {
               style={{ boxShadow: "0 3px 0 #50B0FF" }}
               aria-label="Back"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <Image
+                src="/icon/arrow_left.svg"
+                alt="Back"
+                width={20}
+                height={20}
+                className="brightness-0 invert"
+              />
             </Button>
-            <span className="text-base text-white sm:text-xl font-bold">Edit Profile</span>
+            <span className="text-base text-white sm:text-xl font-bold">
+              Edit Profile
+            </span>
             <div className="w-10" aria-hidden="true" />
           </div>
         </div>
@@ -230,7 +254,7 @@ export default function EditProfilePage() {
           <div className="flex flex-col items-center">
             <div
               className={cn(
-                "relative w-40 h-40 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center mb-4",
+                "relative w-40 h-40 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center mb-4"
               )}
             >
               {loading ? (
@@ -239,7 +263,11 @@ export default function EditProfilePage() {
                 </div>
               ) : (
                 <img
-                  src={(preview || currentPhotoURL || "/avatar/ava1.webp") as string}
+                  src={
+                    (preview ||
+                      currentPhotoURL ||
+                      "/avatar/ava1.webp") as string
+                  }
                   alt="Profile preview"
                   className="w-full h-full object-cover"
                 />
@@ -256,13 +284,22 @@ export default function EditProfilePage() {
                 Change photo
               </Button>
             </div>
-            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={onFileChange}
+            />
           </div>
 
           {/* Fields */}
           <div className="mt-6 space-y-4">
             <div>
-              <label htmlFor="username" className="block text-sm font-semibold text-[rgba(125,71,185,1)] mb-1.5">
+              <label
+                htmlFor="username"
+                className="block text-sm font-semibold text-[rgba(125,71,185,1)] mb-1.5"
+              >
                 Username
               </label>
               <Input
@@ -275,7 +312,10 @@ export default function EditProfilePage() {
             </div>
 
             <div>
-              <label htmlFor="bio" className="block text-sm font-semibold text-[rgba(125,71,185,1)] mb-1.5">
+              <label
+                htmlFor="bio"
+                className="block text-sm font-semibold text-[rgba(125,71,185,1)] mb-1.5"
+              >
                 Bio
               </label>
               <Textarea
@@ -287,7 +327,9 @@ export default function EditProfilePage() {
                 placeholder="Tell something about you (max 200 chars)"
                 className="rounded-2xl bg-slate-100 border-none focus-visible:ring-0"
               />
-              <div className="mt-1 text-right text-xs text-gray-500">{bio.length}/200</div>
+              <div className="mt-1 text-right text-xs text-gray-500">
+                {bio.length}/200
+              </div>
             </div>
 
             {error && <div className="text-sm text-red-600">{error}</div>}
@@ -315,7 +357,9 @@ export default function EditProfilePage() {
         >
           <div className="bg-white rounded-t-3xl w-full max-w-md p-6 space-y-4 animate-in slide-in-from-bottom duration-300 border border-gray-100 shadow-[0_12px_40px_rgba(0,0,0,0.12)]">
             <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
-            <h3 className="text-xl font-extrabold text-center mb-2 text-[rgba(125,71,185,1)]">Change photo</h3>
+            <h3 className="text-xl font-extrabold text-center mb-2 text-[rgba(125,71,185,1)]">
+              Change photo
+            </h3>
 
             <Button
               onClick={openAvatarPicker}
@@ -355,8 +399,15 @@ export default function EditProfilePage() {
             <div className="p-4 border-b border-gray-200 sticky top-0 bg-white">
               <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold text-[rgba(125,71,185,1)]">Choose Avatar</h3>
-                <Button onClick={closeAvatarPicker} variant="ghost" size="sm" className="text-gray-500">
+                <h3 className="text-xl font-semibold text-[rgba(125,71,185,1)]">
+                  Choose Avatar
+                </h3>
+                <Button
+                  onClick={closeAvatarPicker}
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-500"
+                >
                   Close
                 </Button>
               </div>
@@ -364,18 +415,23 @@ export default function EditProfilePage() {
 
             <div className="p-4">
               <div className="grid grid-cols-4 gap-3">
-                {["/avatar/ava1.webp", "/avatar/ava2.webp", "/avatar/ava3.webp", "/avatar/ava4.webp"].map((src) => (
+                {[
+                  "https://firebasestorage.googleapis.com/v0/b/project1-fed7d.appspot.com/o/avatar%2FCaterpillar%20profile%20png.webp?alt=media&token=b0dbf2a1-20f6-4088-b94a-4371649e6258",
+                  "https://firebasestorage.googleapis.com/v0/b/project1-fed7d.appspot.com/o/avatar%2FHappy%20ant%20profile%20png.webp?alt=media&token=73c2e5f8-9d4a-4b2c-8e1f-a5b7c9d2e4f6",
+                  "https://firebasestorage.googleapis.com/v0/b/project1-fed7d.appspot.com/o/avatar%2FLadybug%20profile%20png.webp?alt=media&token=a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                  "https://firebasestorage.googleapis.com/v0/b/project1-fed7d.appspot.com/o/avatar%2FNerd%20ant%20profile%20png.webp?alt=media&token=f9e8d7c6-b5a4-3210-9876-543210fedcba",
+                ].map((src) => (
                   <button
                     key={src}
                     type="button"
                     onClick={() => {
-                      setTempAvatarSelection(src)
+                      setTempAvatarSelection(src);
                     }}
                     className={cn(
                       "relative aspect-square rounded-full overflow-hidden border transition-all",
                       tempAvatarSelection === src
                         ? "border-[rgba(108,211,255,1)] ring-2 ring-[#50B0FF]"
-                        : "border-gray-200 hover:border-gray-300",
+                        : "border-gray-200 hover:border-gray-300"
                     )}
                     aria-label="Select avatar"
                   >
@@ -386,6 +442,34 @@ export default function EditProfilePage() {
                     />
                   </button>
                 ))}
+              </div>
+              <div className="flex justify-center mt-3">
+                {(() => {
+                  const src =
+                    "https://firebasestorage.googleapis.com/v0/b/project1-fed7d.appspot.com/o/avatar%2FNonchalant%20ant%20profile%20png.webp?alt=media&token=c5d4e3f2-a1b0-9876-5432-10fedcba9876";
+                  return (
+                    <button
+                      key={src}
+                      type="button"
+                      onClick={() => {
+                        setTempAvatarSelection(src);
+                      }}
+                      className={cn(
+                        "relative aspect-square rounded-full overflow-hidden border transition-all w-[calc((100%-2.25rem)/4)]",
+                        tempAvatarSelection === src
+                          ? "border-[rgba(108,211,255,1)] ring-2 ring-[#50B0FF]"
+                          : "border-gray-200 hover:border-gray-300"
+                      )}
+                      aria-label="Select avatar"
+                    >
+                      <img
+                        src={src || "/placeholder.svg"}
+                        alt="Avatar option"
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    </button>
+                  );
+                })()}
               </div>
               <div className="mt-4 flex items-center justify-end gap-3 px-1 flex-col pb-0 pt-8">
                 <Button
@@ -402,5 +486,5 @@ export default function EditProfilePage() {
         </div>
       )}
     </main>
-  )
+  );
 }
