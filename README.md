@@ -106,7 +106,7 @@ NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
 
 1. **Clone the repository**
    \`\`\`bash
-   git clone https://github.com/yourusername/antjvity.git
+   git clone https://github.com/Ayash13/antjvity.git
    cd antjvity
    \`\`\`
 
