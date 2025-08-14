@@ -21,16 +21,14 @@ Antjvity is a gamified walking companion that transforms ordinary walks into pur
 ### 🎯 **Mission-Based Walking**
 
 - Randomized daily missions with specific objects to find
-- GPS-based path tracking and distance measurement
-- Mission completion rewards and progress tracking
-- Personalized mission difficulty based on user activity
+- GPS-based distance measurement
 
 ### 📖 **Digital Journal**
 
 - Photo-based journal entries with stories
 - Calendar view for browsing past adventures
 - Distance and time tracking for each session
-- Rich text editing for detailed storytelling
+- Text editing for detailed storytelling
 
 ### 👥 **Social Features**
 
@@ -38,13 +36,6 @@ Antjvity is a gamified walking companion that transforms ordinary walks into pur
 - Like and comment on community posts
 - User profiles with bio and avatar customization
 - Favorites system for memorable content
-
-### 📱 **Progressive Web App**
-
-- Installable on mobile devices and desktop
-- Offline functionality with service worker caching
-- Native app-like experience with custom status bar
-- Push notifications for mission reminders
 
 ### 🔐 **Authentication & Profiles**
 
