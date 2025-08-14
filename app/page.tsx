@@ -1,23 +1,35 @@
-'use client'
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { OnboardingSlider } from '@/components/onboarding-slider';
-import { RedirectIfAuthenticated } from '@/components/redirect-if-auth'
-// Removed import of SpaceExplorer from './main/page' - it will now be rendered by the router
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { OnboardingSlider } from "@/components/onboarding-slider";
+import { RedirectIfAuthenticated } from "@/components/redirect-if-auth";
+import { DesktopLanding } from "@/components/desktop-landing";
 
 export default function RootPage() {
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const handleOnboardingComplete = () => {
     setOnboardingCompleted(true);
-    router.push('/sign-in'); // Navigate to the /sign-in page after onboarding
+    router.push("/sign-in");
   };
 
-  // In a real app, you'd likely use a state management solution or local storage
-  // to persist the onboarding completion status across sessions.
-  // For this example, we'll just show it once per session.
+  if (!isMobile) {
+    return <DesktopLanding />;
+  }
 
   if (!onboardingCompleted) {
     return (
@@ -28,8 +40,6 @@ export default function RootPage() {
     );
   }
 
-  // This part will technically not be reached if router.push works immediately,
-  // but it's good practice to have a fallback or loading state.
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <p>Loading main app...</p>
