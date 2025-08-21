@@ -661,10 +661,10 @@ export default function UserProfilePage({
                     <img
                       src={badge.badgeUrl || "/placeholder.svg"}
                       alt={badge.name}
-                      className="w-32 h-32 rounded-full object-cover"
+                      className="w-24 h-24rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-32 h-32 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center">
+                    <div className="w-24 h-24rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center">
                       <span className="text-gray-400 text-2xl">?</span>
                     </div>
                   )}

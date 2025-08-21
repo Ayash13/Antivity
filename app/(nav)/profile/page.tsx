@@ -1,68 +1,97 @@
-"use client"
+"use client";
 
-import { useEffect, useMemo, useState } from "react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { onAuthStateChanged, signOut } from "firebase/auth"
-import { auth, db } from "@/lib/firebase/client"
-import { getUserProfile, type UserProfile } from "@/lib/firebase/firestore"
-import { getFollowCounts, onFollowCountsChange, type FollowCounts } from "@/lib/firebase/follows"
-import { getUserEarnedBadges, listenToUserEarnedBadges, type EarnedBadge } from "@/lib/firebase/badges"
-import { collection, getCountFromServer, getDocs, where, orderBy, query } from "firebase/firestore"
-import { Button } from "@/components/ui/button"
-import { useRouter } from "next/navigation"
-import Image from "next/image"
+import { useEffect, useMemo, useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { auth, db } from "@/lib/firebase/client";
+import { getUserProfile, type UserProfile } from "@/lib/firebase/firestore";
+import {
+  getFollowCounts,
+  onFollowCountsChange,
+  type FollowCounts,
+} from "@/lib/firebase/follows";
+import {
+  getUserEarnedBadges,
+  listenToUserEarnedBadges,
+  type EarnedBadge,
+} from "@/lib/firebase/badges";
+import {
+  collection,
+  getCountFromServer,
+  getDocs,
+  where,
+  orderBy,
+  query,
+} from "firebase/firestore";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 
-type ProfileData = Pick<UserProfile, "username" | "displayName" | "photoURL" | "createdAt" | "bio">
-type DaySession = { docId: string; images: string[]; selfieUrl?: string }
+type ProfileData = Pick<
+  UserProfile,
+  "username" | "displayName" | "photoURL" | "createdAt" | "bio"
+>;
+type DaySession = { docId: string; images: string[]; selfieUrl?: string };
 
 function formatCreatedAt(d?: Date | null) {
-  if (!d) return ""
-  return d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })
+  if (!d) return "";
+  return d.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
 
 function startOfWeek(date: Date) {
-  const d = new Date(date)
-  const day = d.getDay()
-  d.setDate(d.getDate() - day)
-  d.setHours(0, 0, 0, 0)
-  return d
+  const d = new Date(date);
+  const day = d.getDay();
+  d.setDate(d.getDate() - day);
+  d.setHours(0, 0, 0, 0);
+  return d;
 }
 
 function getWeekDates(anchor: Date) {
-  const start = startOfWeek(anchor)
+  const start = startOfWeek(anchor);
   return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(start)
-    d.setDate(start.getDate() + i)
-    return d
-  })
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    return d;
+  });
 }
 
 function isSameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 export default function ProfilePage() {
-  const router = useRouter()
-  const [uid, setUid] = useState<string | null>(null)
-  const [profile, setProfile] = useState<ProfileData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [sessionCount, setSessionCount] = useState(0)
-  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date())
-  const [daySessions, setDaySessions] = useState<DaySession[]>([])
-  const [followCounts, setFollowCounts] = useState<FollowCounts>({ followers: 0, following: 0 })
-  const [earnedBadges, setEarnedBadges] = useState<EarnedBadge[]>([])
+  const router = useRouter();
+  const [uid, setUid] = useState<string | null>(null);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [sessionCount, setSessionCount] = useState(0);
+  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
+  const [daySessions, setDaySessions] = useState<DaySession[]>([]);
+  const [followCounts, setFollowCounts] = useState<FollowCounts>({
+    followers: 0,
+    following: 0,
+  });
+  const [earnedBadges, setEarnedBadges] = useState<EarnedBadge[]>([]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        setUid(null)
-        setProfile(null)
-        setLoading(false)
-        return
+        setUid(null);
+        setProfile(null);
+        setLoading(false);
+        return;
       }
-      setUid(user.uid)
+      setUid(user.uid);
       try {
-        const p = await getUserProfile(user.uid)
+        const p = await getUserProfile(user.uid);
         if (p) {
           setProfile({
             username: p.username,
@@ -70,94 +99,98 @@ export default function ProfilePage() {
             photoURL: p.photoURL,
             createdAt: p.createdAt,
             bio: p.bio ?? null,
-          })
+          });
         }
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    })
-    return () => unsub()
-  }, [])
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
-    if (!uid) return
+    if (!uid) return;
 
-    getFollowCounts(uid).then(setFollowCounts)
+    getFollowCounts(uid).then(setFollowCounts);
 
-    const unsubscribe = onFollowCountsChange(uid, setFollowCounts)
-    return unsubscribe
-  }, [uid])
-
-  useEffect(() => {
-    if (!uid) return
-
-    getUserEarnedBadges(uid).then(setEarnedBadges)
-
-    const unsubscribe = listenToUserEarnedBadges(uid, setEarnedBadges)
-    return unsubscribe
-  }, [uid])
+    const unsubscribe = onFollowCountsChange(uid, setFollowCounts);
+    return unsubscribe;
+  }, [uid]);
 
   useEffect(() => {
-    if (!uid) return
-    ;(async () => {
+    if (!uid) return;
+
+    getUserEarnedBadges(uid).then(setEarnedBadges);
+
+    const unsubscribe = listenToUserEarnedBadges(uid, setEarnedBadges);
+    return unsubscribe;
+  }, [uid]);
+
+  useEffect(() => {
+    if (!uid) return;
+    (async () => {
       try {
-        const colRef = collection(db, "users", uid, "pathSessions")
-        const agg = await getCountFromServer(colRef)
-        setSessionCount(agg.data().count)
+        const colRef = collection(db, "users", uid, "pathSessions");
+        const agg = await getCountFromServer(colRef);
+        setSessionCount(agg.data().count);
       } catch (err) {
-        console.error("Failed to count pathSessions", err)
-        setSessionCount(0)
+        console.error("Failed to count pathSessions", err);
+        setSessionCount(0);
       }
-    })()
-  }, [uid])
+    })();
+  }, [uid]);
 
   useEffect(() => {
-    if (!uid) return
-    ;(async () => {
+    if (!uid) return;
+    (async () => {
       try {
-        const start = new Date(selectedDate)
-        start.setHours(0, 0, 0, 0)
-        const end = new Date(start)
-        end.setDate(start.getDate() + 1)
+        const start = new Date(selectedDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(start);
+        end.setDate(start.getDate() + 1);
 
-        const colRef = collection(db, "users", uid, "pathSessions")
+        const colRef = collection(db, "users", uid, "pathSessions");
         const q = query(
           colRef,
           where("createdAt", ">=", start),
           where("createdAt", "<", end),
-          orderBy("createdAt", "desc"),
-        )
-        const snap = await getDocs(q)
+          orderBy("createdAt", "desc")
+        );
+        const snap = await getDocs(q);
 
-        const sessions: DaySession[] = []
+        const sessions: DaySession[] = [];
         snap.forEach((d) => {
-          const data: any = d.data()
+          const data: any = d.data();
           if (Array.isArray(data?.items)) {
             const urls = data.items
               .map((it: any) => (it?.imageUrl ? String(it.imageUrl) : null))
-              .filter(Boolean) as string[]
+              .filter(Boolean) as string[];
             if (urls.length)
               sessions.push({
                 docId: d.id,
                 images: urls,
                 selfieUrl: data?.selfieImageUrl || undefined,
-              })
+              });
           }
-        })
-        setDaySessions(sessions)
+        });
+        setDaySessions(sessions);
       } catch (e) {
-        console.error("Failed to fetch day sessions", e)
-        setDaySessions([])
+        console.error("Failed to fetch day sessions", e);
+        setDaySessions([]);
       }
-    })()
-  }, [uid, selectedDate])
+    })();
+  }, [uid, selectedDate]);
 
-  const now = new Date()
-  const weekDates = useMemo(() => getWeekDates(selectedDate), [selectedDate])
+  const now = new Date();
+  const weekDates = useMemo(() => getWeekDates(selectedDate), [selectedDate]);
   const monthLabel = useMemo(
-    () => selectedDate.toLocaleDateString(undefined, { month: "long", year: "numeric" }),
-    [selectedDate],
-  )
+    () =>
+      selectedDate.toLocaleDateString(undefined, {
+        month: "long",
+        year: "numeric",
+      }),
+    [selectedDate]
+  );
 
   if (loading) {
     return (
@@ -178,9 +211,9 @@ export default function ProfilePage() {
                 aria-label="Previous day"
                 onClick={() =>
                   setSelectedDate((d) => {
-                    const nd = new Date(d)
-                    nd.setDate(d.getDate() - 1)
-                    return nd
+                    const nd = new Date(d);
+                    nd.setDate(d.getDate() - 1);
+                    return nd;
                   })
                 }
                 className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FAD02C]"
@@ -197,9 +230,9 @@ export default function ProfilePage() {
                 aria-label="Next day"
                 onClick={() =>
                   setSelectedDate((d) => {
-                    const nd = new Date(d)
-                    nd.setDate(d.getDate() + 1)
-                    return nd
+                    const nd = new Date(d);
+                    nd.setDate(d.getDate() + 1);
+                    return nd;
                   })
                 }
                 className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FAD02C]"
@@ -226,19 +259,21 @@ export default function ProfilePage() {
           ))}
         </div>
       </main>
-    )
+    );
   }
 
   if (!uid || !profile) {
     return (
       <main className="mx-auto max-w-md px-4 py-10">
-        <p className="text-center text-gray-500">Sign in to view your profile.</p>
+        <p className="text-center text-gray-500">
+          Sign in to view your profile.
+        </p>
       </main>
-    )
+    );
   }
 
-  const { displayName, username, photoURL, createdAt, bio } = profile
-  const level = Math.floor(sessionCount / 3)
+  const { displayName, username, photoURL, createdAt, bio } = profile;
+  const level = Math.floor(sessionCount / 3);
 
   return (
     <main
@@ -254,9 +289,15 @@ export default function ProfilePage() {
       <section className="py-4 bg-[#6CD3FF]">
         <div className="flex items-center gap-4 px-6">
           <div className="flex-shrink-0">
-            <Avatar className="ring-4 ring-white w-24 h-24" style={{ boxShadow: "0 5px 0 #50B0FF" }}>
+            <Avatar
+              className="ring-4 ring-white w-24 h-24"
+              style={{ boxShadow: "0 5px 0 #50B0FF" }}
+            >
               <AvatarImage
-                src={photoURL || "/placeholder.svg?height=64&width=64&query=profile%20photo"}
+                src={
+                  photoURL ||
+                  "/placeholder.svg?height=64&width=64&query=profile%20photo"
+                }
                 alt="Profile photo"
               />
               <AvatarFallback className="font-semibold text-lg">
@@ -268,11 +309,15 @@ export default function ProfilePage() {
           <div className="flex-1 flex justify-around">
             <div className="text-center">
               <div className="text-lg font-bold text-[#7D47B9]">Followers</div>
-              <div className="font-extrabold text-[#7D47B9] text-3xl">{followCounts.followers}</div>
+              <div className="font-extrabold text-[#7D47B9] text-3xl">
+                {followCounts.followers}
+              </div>
             </div>
             <div className="text-center">
               <div className="text-lg font-bold text-[#7D47B9]">Following</div>
-              <div className="font-extrabold text-[#7D47B9] text-3xl">{followCounts.following}</div>
+              <div className="font-extrabold text-[#7D47B9] text-3xl">
+                {followCounts.following}
+              </div>
             </div>
           </div>
         </div>
@@ -281,7 +326,9 @@ export default function ProfilePage() {
       <div className="px-4 py-6 pt-0 pl-6 pr-6">
         <section className="mt-6 px-2">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-extrabold text-[rgba(125,71,185,1)]">{displayName || "Username"}</h1>
+            <h1 className="text-2xl font-extrabold text-[rgba(125,71,185,1)]">
+              {displayName || "Username"}
+            </h1>
             <button
               onClick={async () => {
                 try {
@@ -290,15 +337,15 @@ export default function ProfilePage() {
                       title: `${displayName || username}'s Profile`,
                       text: `Check out ${displayName || username}'s profile!`,
                       url: window.location.href,
-                    })
+                    });
                   } else {
                     // Fallback: copy to clipboard
-                    await navigator.clipboard.writeText(window.location.href)
+                    await navigator.clipboard.writeText(window.location.href);
                     // You could add a toast notification here
-                    console.log("Profile link copied to clipboard!")
+                    console.log("Profile link copied to clipboard!");
                   }
                 } catch (error) {
-                  console.error("Error sharing:", error)
+                  console.error("Error sharing:", error);
                 }
               }}
               className="flex items-center justify-center h-8 px-4 rounded-full bg-[#6CD3FF] hover:bg-[#5BCDFE] text-white text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[#50B0FF] focus:ring-offset-2"
@@ -309,24 +356,34 @@ export default function ProfilePage() {
             </button>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-gray-500">
-            <span className="font-medium text-[rgba(174,121,235,1)]">@{username}</span>
-            <span className="text-[rgba(174,121,235,1)] font-medium">Joined</span>
-            <span className="text-[rgba(174,121,235,1)] font-medium">{formatCreatedAt(createdAt)}</span>
+            <span className="font-medium text-[rgba(174,121,235,1)]">
+              @{username}
+            </span>
+            <span className="text-[rgba(174,121,235,1)] font-medium">
+              Joined
+            </span>
+            <span className="text-[rgba(174,121,235,1)] font-medium">
+              {formatCreatedAt(createdAt)}
+            </span>
           </div>
-          <p className="mt-2 text-[rgba(174,121,235,1)]">{bio && bio.trim().length > 0 ? bio : "No bio yet"}</p>
+          <p className="mt-2 text-[rgba(174,121,235,1)]">
+            {bio && bio.trim().length > 0 ? bio : "No bio yet"}
+          </p>
         </section>
 
         <section className="mt-6 rounded-[36px] p-5 bg-white">
           <div className="mb-5 flex items-center justify-between">
-            <h2 className="font-extrabold text-[rgba(125,71,185,1)] text-xl">{monthLabel}</h2>
+            <h2 className="font-extrabold text-[rgba(125,71,185,1)] text-xl">
+              {monthLabel}
+            </h2>
             <div className="flex items-center gap-3">
               <button
                 aria-label="Previous day"
                 onClick={() =>
                   setSelectedDate((d) => {
-                    const nd = new Date(d)
-                    nd.setDate(d.getDate() - 1)
-                    return nd
+                    const nd = new Date(d);
+                    nd.setDate(d.getDate() - 1);
+                    return nd;
                   })
                 }
                 className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FAD02C]"
@@ -343,9 +400,9 @@ export default function ProfilePage() {
                 aria-label="Next day"
                 onClick={() =>
                   setSelectedDate((d) => {
-                    const nd = new Date(d)
-                    nd.setDate(d.getDate() + 1)
-                    return nd
+                    const nd = new Date(d);
+                    nd.setDate(d.getDate() + 1);
+                    return nd;
                   })
                 }
                 className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FAD02C]"
@@ -363,8 +420,8 @@ export default function ProfilePage() {
 
           <div className="grid grid-cols-7 gap-2 text-center mt-1 h-20">
             {["S", "M", "T", "W", "T", "F", "S"].map((label, i) => {
-              const d = weekDates[i]
-              const highlight = isSameDay(d, selectedDate)
+              const d = weekDates[i];
+              const highlight = isSameDay(d, selectedDate);
               return (
                 <div
                   key={label}
@@ -377,12 +434,14 @@ export default function ProfilePage() {
                   {highlight && (
                     <div className="absolute left-1/2 top-0 bottom-0 -translate-x-1/2 w-12 rounded-full bg-cyan-200/60 h-full sm:w-9" />
                   )}
-                  <div className="z-10 text-sm font-semibold text-[#7D47B9]">{label}</div>
+                  <div className="z-10 text-sm font-semibold text-[#7D47B9]">
+                    {label}
+                  </div>
                   <div className="z-10 text-base font-extrabold tabular-nums leading-none pt-1 text-[#7D47B9]">
                     {String(d.getDate()).padStart(2, "0")}
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </section>
@@ -401,9 +460,15 @@ export default function ProfilePage() {
                   <button
                     key={s.docId}
                     type="button"
-                    onClick={() => router.push(`/profile/photos/${encodeURIComponent(s.docId)}`)}
+                    onClick={() =>
+                      router.push(
+                        `/profile/photos/${encodeURIComponent(s.docId)}`
+                      )
+                    }
                     className="block w-full rounded-2xl bg-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-[#50B0FF]"
-                    aria-label={`View session ${idx + 1} with ${s.images.length} photo${s.images.length > 1 ? "s" : ""}`}
+                    aria-label={`View session ${idx + 1} with ${
+                      s.images.length
+                    } photo${s.images.length > 1 ? "s" : ""}`}
                   >
                     <div className="relative aspect-square">
                       <div className="absolute inset-0 p-2">
@@ -412,7 +477,10 @@ export default function ProfilePage() {
                           style={{ boxShadow: "0 4px 0 #50B0FF" }}
                         >
                           <img
-                            src={s.images[0] || "/placeholder.svg?height=600&width=600&query=session%20cover"}
+                            src={
+                              s.images[0] ||
+                              "/placeholder.svg?height=600&width=600&query=session%20cover"
+                            }
                             alt={`Session ${idx + 1} cover`}
                             className="absolute inset-0 h-full w-full object-cover py-1.5 px-1.5 rounded-2xl"
                             loading="lazy"
@@ -437,7 +505,9 @@ export default function ProfilePage() {
                               style={{ boxShadow: "0 3px 0 #50B0FF" }}
                             >
                               {s.images.length + (s.selfieUrl ? 1 : 0)} photo
-                              {s.images.length + (s.selfieUrl ? 1 : 0) > 1 ? "s" : ""}
+                              {s.images.length + (s.selfieUrl ? 1 : 0) > 1
+                                ? "s"
+                                : ""}
                             </span>
                           </div>
                         </div>
@@ -451,7 +521,9 @@ export default function ProfilePage() {
         </section>
 
         <section className="mt-6 mb-12">
-          <h3 className="text-[#7D47B9] mb-6 text-xl font-extrabold text-left">Badges</h3>
+          <h3 className="text-[#7D47B9] mb-6 text-xl font-extrabold text-left">
+            Badges
+          </h3>
           <div className="flex justify-center gap-6 items-center">
             {earnedBadges.slice(0, 3).map((badge, index) => (
               <div key={badge.id} className="flex flex-col items-center">
@@ -459,10 +531,10 @@ export default function ProfilePage() {
                   <img
                     src={badge.badgeUrl || "/placeholder.svg"}
                     alt={badge.name}
-                    className="w-32 h-32 object-cover rounded-full"
+                    className="w-24 h-24 object-cover rounded-full"
                   />
                 ) : (
-                  <div className="w-32 h-32 rounded-full border-4 border-dashed border-gray-400 flex items-center justify-center bg-transparent">
+                  <div className="w-24 h-24 rounded-full border-4 border-dashed border-gray-400 flex items-center justify-center bg-transparent">
                     <span className="text-gray-400 text-2xl">?</span>
                   </div>
                 )}
@@ -472,14 +544,21 @@ export default function ProfilePage() {
               </div>
             ))}
 
-            {Array.from({ length: Math.max(0, 3 - earnedBadges.length) }).map((_, index) => (
-              <div key={`placeholder-${index}`} className="flex flex-col items-center">
-                <div className="w-32 h-32 rounded-full border-4 border-dashed border-gray-300 flex items-center justify-center bg-transparent">
-                  <span className="text-gray-300 text-2xl">?</span>
+            {Array.from({ length: Math.max(0, 3 - earnedBadges.length) }).map(
+              (_, index) => (
+                <div
+                  key={`placeholder-${index}`}
+                  className="flex flex-col items-center"
+                >
+                  <div className="w-24 h-24 rounded-full border-4 border-dashed border-gray-300 flex items-center justify-center bg-transparent">
+                    <span className="text-gray-300 text-2xl">?</span>
+                  </div>
+                  <span className="text-xs text-gray-400 font-semibold mt-3">
+                    Coming Soon
+                  </span>
                 </div>
-                <span className="text-xs text-gray-400 font-semibold mt-3">Coming Soon</span>
-              </div>
-            ))}
+              )
+            )}
           </div>
         </section>
 
@@ -497,10 +576,10 @@ export default function ProfilePage() {
               type="button"
               onClick={async () => {
                 try {
-                  await signOut(auth)
-                  router.push("/sign-in")
+                  await signOut(auth);
+                  router.push("/sign-in");
                 } catch (e) {
-                  console.error("Failed to sign out", e)
+                  console.error("Failed to sign out", e);
                 }
               }}
               className="rounded-full bg-[#F24B66] hover:bg-[#E13D59] text-white py-4 h-14 font-bold text-xl shadow-[0_4px_0_#EB2E58] w-60"
@@ -511,5 +590,5 @@ export default function ProfilePage() {
         </section>
       </div>
     </main>
-  )
+  );
 }
