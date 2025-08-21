@@ -1,5 +1,6 @@
 "use client"
 import Image from "next/image"
+import { useEffect, useState } from "react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -25,13 +26,35 @@ interface BottomNavProps {
 }
 
 export function BottomNav({ activeIndex = 0, onChange, items = defaultItems, className }: BottomNavProps) {
+  const [isIOSPWA, setIsIOSPWA] = useState(false)
+
+  useEffect(() => {
+    const checkIOSPWA = () => {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches
+      const isWebKit = "webkit" in window
+      setIsIOSPWA(isIOS && (isStandalone || isWebKit))
+    }
+
+    checkIOSPWA()
+  }, [])
+
   return (
     <div className={cn("fixed inset-x-0 bottom-0 z-40", className)} aria-label="Bottom navigation">
       <div className="relative w-full">
-        <div className="relative w-full rounded-t-3xl bg-white shadow-[0_-2px_16px_rgba(0,0,0,0.06)] border-t border-gray-100">
+        <div
+          className={cn(
+            "relative w-full rounded-t-3xl bg-white shadow-[0_-2px_16px_rgba(0,0,0,0.06)] border-t border-gray-100",
+            isIOSPWA && "bottom-nav-ios backdrop-blur-xl",
+          )}
+        >
           <div
-            className="flex items-center justify-between px-6 pr-0 pl-0 pt-3 pb-10"
-            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)" }}
+            className="flex items-center justify-between px-6 pr-0 pl-0 pt-3"
+            style={{
+              paddingBottom: isIOSPWA
+                ? "calc(env(safe-area-inset-bottom, 0px) + 1.5rem)"
+                : "calc(env(safe-area-inset-bottom, 0px) + 1.5rem)",
+            }}
           >
             {items.map((it, idx) => {
               const active = idx === activeIndex

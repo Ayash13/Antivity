@@ -90,7 +90,15 @@ export default function ProfilePhotosDetailPage() {
   }, [next, prev])
 
   return (
-    <main className="min-h-dvh bg-[rgba(226,249,255,1)] text-gray-900 pb-28">
+    <main
+      className="min-h-dvh bg-[rgba(226,249,255,1)] text-gray-900 pb-28"
+      style={{
+        backgroundImage: 'url("/images/bg3.webp")',
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
       {/* Header with back + pill title, styled like app */}
       <div
         className="sticky top-0 z-20 border-b border-gray-200"
@@ -137,7 +145,7 @@ export default function ProfilePhotosDetailPage() {
           <div className="relative mt-4">
             {/* Image */}
             <div className="rounded-2xl overflow-hidden bg-gray-100 border border-gray-200">
-              <div className="relative w-full aspect-[4/5] sm:aspect-[3/4]">
+              <div className="relative w-full aspect-square">
                 <img
                   src={images[index] || "/placeholder.svg?height=800&width=800&query=photo"}
                   alt={`Photo ${index + 1}`}

@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import { useEffect, useState } from "react"
 import { useMemo } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { BottomNav } from "@/components/bottom-nav"
@@ -31,11 +31,24 @@ export default function WithNavLayout({ children }: { children: React.ReactNode 
     pathname === "/profile/edit" ||
     Boolean(pathname?.startsWith("/profile/photos")) ||
     Boolean(pathname?.startsWith("/social/favorites")) ||
-    Boolean(pathname?.match(/^\/profile\/[^/]+$/))
+    Boolean(pathname?.match(/^\/profile\/[^/]+$/)) ||
+    Boolean(pathname?.match(/^\/profile\/[^/]+\/photos\/[^/]+$/))
+
+  const [isIOSPWA, setIsIOSPWA] = useState(false)
+
+  useEffect(() => {
+    const checkIOSPWA = () => {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches
+      setIsIOSPWA(isIOS && isStandalone)
+    }
+
+    checkIOSPWA()
+  }, [])
 
   return (
     <>
-      <div className="min-h-dvh">{children}</div>
+      <div className={isIOSPWA ? "pwa-content" : "min-h-dvh"}>{children}</div>
       {!hideNav && <BottomNav activeIndex={activeIndex} onChange={(i) => router.push(indexToRoute[i] ?? "/main")} />}
     </>
   )
