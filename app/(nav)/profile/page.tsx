@@ -332,16 +332,20 @@ export default function ProfilePage() {
             <button
               onClick={async () => {
                 try {
+                  const profileUrl = `${window.location.origin}/profile/${uid}`;
+                  const shareData = {
+                    title: `${displayName || username}'s Profile`,
+                    text: `Check out ${
+                      displayName || username
+                    }'s profile on our app!`,
+                    url: profileUrl,
+                  };
+
                   if (navigator.share) {
-                    await navigator.share({
-                      title: `${displayName || username}'s Profile`,
-                      text: `Check out ${displayName || username}'s profile!`,
-                      url: window.location.href,
-                    });
+                    await navigator.share(shareData);
                   } else {
                     // Fallback: copy to clipboard
-                    await navigator.clipboard.writeText(window.location.href);
-                    // You could add a toast notification here
+                    await navigator.clipboard.writeText(profileUrl);
                     console.log("Profile link copied to clipboard!");
                   }
                 } catch (error) {
