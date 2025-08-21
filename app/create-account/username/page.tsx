@@ -1,24 +1,24 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { useRouter } from "next/navigation"
-import Image from "next/image"
-import { useState } from "react"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { useState } from "react";
 
 export default function CreateUsernamePage() {
-  const router = useRouter()
-  const [username, setUsername] = useState("")
+  const router = useRouter();
+  const [username, setUsername] = useState("");
 
   const handleContinue = () => {
-    if (!username.trim()) return
+    if (!username.trim()) return;
 
-    const params = new URLSearchParams()
-    params.set("username", username.trim())
-    router.push(`/create-account/email-password?${params.toString()}`)
-  }
+    const params = new URLSearchParams();
+    params.set("username", username.trim());
+    router.push(`/create-account/email-password?${params.toString()}`);
+  };
 
-  const handleBack = () => router.back()
+  const handleBack = () => router.back();
 
   return (
     <div
@@ -50,7 +50,9 @@ export default function CreateUsernamePage() {
       </div>
 
       <div className="w-full max-w-md rounded-[40px] p-8 flex flex-col items-center text-center space-y-8 pb-8 mb-0 bg-white">
-        <h1 className="font-bold text-gray-900 mt-8 mb-11 text-3xl">All set with that cool username?</h1>
+        <h1 className="font-bold text-[rgba(125,71,185,1)] mt-8 mb-11 text-3xl">
+          All set with that cool username?
+        </h1>
         <Input
           type="text"
           placeholder="Username"
@@ -69,5 +71,5 @@ export default function CreateUsernamePage() {
         </Button>
       </div>
     </div>
-  )
+  );
 }
