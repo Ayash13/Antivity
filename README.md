@@ -1,16 +1,20 @@
 <h1 align="center">Antivity — Walk with Purpose</h1>
 
 <div align="center">
-  <img src="./public/logo/antjvity-logo.webp" alt="Antivity Logo" width="300" />
-  
-  **Antivity gives more purpose to your walk. Discover things, notice your surroundings, and make every step more meaningful.**
-  
-  [![Next.js](https://img.shields.io/badge/Next.js-14.2.25-black?style=flat-square&logo=next.js)](https://nextjs.org/)
-  [![React](https://img.shields.io/badge/React-19-blue?style=flat-square&logo=react)](https://reactjs.org/)
-  [![TypeScript](https://img.shields.io/badge/TypeScript-5.7.3-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
-  [![Firebase](https://img.shields.io/badge/Firebase-orange?style=flat-square&logo=firebase)](https://firebase.google.com/)
-  [![PWA](https://img.shields.io/badge/PWA-Ready-green?style=flat-square)](https://web.dev/progressive-web-apps/)
+
+<img src="./public/logo/antjvity-logo.webp" alt="Antivity Logo" width="300" />
+
+**Antivity gives more purpose to your walk. Discover things, notice your surroundings, and make every step more meaningful.**
+
+[![Next.js](https://img.shields.io/badge/Next.js-14.2.25-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19-blue?style=flat-square&logo=react)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7.3-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Firebase](https://img.shields.io/badge/Firebase-orange?style=flat-square&logo=firebase)](https://firebase.google.com/)
+[![PWA](https://img.shields.io/badge/PWA-Ready-green?style=flat-square)](https://web.dev/progressive-web-apps/)
+
 </div>
+
+---
 
 ## 🌟 Features
 
@@ -57,6 +61,8 @@
 - **Session Management**: Track walk duration, distance, and photos
 - **Offline Support**: Continue walking even without internet connection
 
+---
+
 ## 🛠 Tech Stack
 
 ### Frontend
@@ -79,6 +85,8 @@
 - **Responsive Design** - Mobile-first approach
 - **Image Optimization** - Next.js Image component
 
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -91,27 +99,25 @@
 ### Installation
 
 1. **Clone the repository**
-   \`\`\`bash
+
+   ```bash
    git clone https://github.com/Ayash13/antivity.git
    cd antivity
-   \`\`\`
+   ```
 
 2. **Install dependencies**
-   \`\`\`bash
+
+   ```bash
    npm install
-
    # or
-
    yarn install
-   \`\`\`
+   ```
 
-3. **Set up environment variables**
-
+3. **Set up environment variables**  
    Create a `.env.local` file in the root directory:
-   \`\`\`env
 
+   ```env
    # Firebase Configuration
-
    NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
    NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
@@ -121,13 +127,8 @@
    NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
 
    # Gemini AI Configuration
-
    GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_api_key
-
-   # Development URLs
-
-   NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL=http://localhost:3000
-   \`\`\`
+   ```
 
 4. **Set up Firebase**
 
@@ -143,47 +144,53 @@
    - Add the key to your environment variables
 
 6. **Run the development server**
-   \`\`\`bash
+
+   ```bash
    npm run dev
-
    # or
-
    yarn dev
-   \`\`\`
+   ```
 
-7. **Open your browser**
-
+7. **Open your browser**  
    Navigate to [http://localhost:3000](http://localhost:3000)
 
-### Firebase Database Structure
+---
 
-The app uses the following Firestore collections:
+## 🗄 Firebase Database Structure
 
-\`\`\`
+```plaintext
 users/
-{uid}/ - displayName, username, bio, photoURL, createdAt
+  {uid}/ - displayName, username, bio, photoURL, createdAt
+
 missions/
-{missionId}/ - missionId, status
+  {missionId}/ - missionId, status
+
 pathSessions/
-{sessionId}/ - createdAt, items, selfieImageUrl, totalDistance
+  {sessionId}/ - createdAt, items, selfieImageUrl, totalDistance
+
 journal/
-{journalId}/ - storyTitle, storyContent, resultImageUrl, createdAt
+  {journalId}/ - storyTitle, storyContent, resultImageUrl, createdAt
+
 followers/
-{followerId}/ - followerId, createdAt
+  {followerId}/ - followerId, createdAt
+
 following/
-{followingId}/ - followingId, createdAt
+  {followingId}/ - followingId, createdAt
 
 mission/
-{missionId}/ - title, description, imageUrl, status
+  {missionId}/ - title, description, imageUrl, status
 
 badge/
-{badgeId}/ - name, badgeUrl, mission (required count)
+  {badgeId}/ - name, badgeUrl, mission (required count)
 
 posts/
-{postId}/ - uid, content, images, createdAt, likes
+  {postId}/ - uid, content, images, createdAt, likes
+
 replies/
-{replyId}/ - uid, content, createdAt
-\`\`\`
+  {replyId}/ - uid, content, createdAt
+```
+
+---
 
 ## 📱 Usage
 
@@ -209,6 +216,8 @@ replies/
 3. **Engage**: Like and comment on posts from people you follow
 4. **Discover**: Use search to find new people and interesting content
 
+---
+
 ## 🎨 Design System
 
 Antivity uses a cohesive design system with:
@@ -219,27 +228,30 @@ Antivity uses a cohesive design system with:
 - **Shadows**: Consistent drop shadows using the blue color palette
 - **Rounded Corners**: Generous border radius for friendly appearance
 
+---
+
 ## 🔧 Development
 
 ### Project Structure
 
-\`\`\`
+```plaintext
 antivity/
-├── app/ # Next.js App Router pages
-│ ├── (nav)/ # Pages with navigation
-│ │ ├── main/ # Main mission screen
-│ │ ├── social/ # Social feed and interactions
-│ │ ├── journal/ # Photo journal and history
-│ │ └── profile/ # User profiles and settings
-│ ├── sign-in/ # Authentication pages
-│ └── path/ # Walking session pages
-├── components/ # Reusable UI components
-├── context/ # React context providers
-├── lib/ # Utility functions and Firebase
-│ └── firebase/ # Firebase service functions
-├── public/ # Static assets
-└── hooks/ # Custom React hooks
-\`\`\`
+├── app/                  # Next.js App Router pages
+│   ├── (nav)/            # Pages with navigation
+│   │   ├── main/         # Main mission screen
+│   │   ├── social/       # Social feed and interactions
+│   │   ├── journal/      # Photo journal and history
+│   │   └── profile/      # User profiles and settings
+│   ├── sign-in/          # Authentication pages
+│   └── path/             # Walking session pages
+├── components/           # Reusable UI components
+├── context/              # React context providers
+├── hooks/                # Custom React hooks
+├── lib/                  # Utility functions and Firebase
+│   └── firebase/         # Firebase service functions
+├── public/               # Static assets
+└── styles/               # Global styles & Tailwind config
+```
 
 ### Key Components
 
@@ -256,6 +268,8 @@ antivity/
 - **Missions**: Mission management and progress tracking
 - **Badges**: Achievement system
 - **Social**: Follow system, posts, and interactions
+
+---
 
 ## 🤝 Contributing
 
@@ -275,9 +289,13 @@ We welcome contributions! Please follow these steps:
 - Test your changes thoroughly
 - Update documentation as needed
 
+---
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
 
 ## 🙏 Acknowledgments
 
@@ -289,4 +307,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-Transform your daily walks into meaningful adventures with Antivity!
+✨ Transform your daily walks into meaningful adventures with **Antivity**!

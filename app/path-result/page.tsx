@@ -554,7 +554,7 @@ export default function PathResultPage() {
             style={{
               width: "340px",
               height: "600px",
-              backgroundImage: "url('/images/bg5.png')",
+              backgroundImage: "url('/images/bg5.webp')",
               backgroundSize: "cover",
               backgroundPosition: "center",
               borderRadius: "32px",
