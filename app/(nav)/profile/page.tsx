@@ -26,6 +26,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Head from "next/head";
 
 type ProfileData = Pick<
   UserProfile,
@@ -181,6 +182,72 @@ export default function ProfilePage() {
     })();
   }, [uid, selectedDate]);
 
+  useEffect(() => {
+    if (profile && uid) {
+      // Update meta tags for social sharing
+      const updateMetaTags = () => {
+        // Remove existing meta tags
+        const existingTags = document.querySelectorAll(
+          'meta[property^="og:"], meta[name="twitter:"]'
+        );
+        existingTags.forEach((tag) => tag.remove());
+
+        // Create new meta tags
+        const metaTags = [
+          {
+            property: "og:title",
+            content: `${profile.displayName || profile.username}'s Profile`,
+          },
+          {
+            property: "og:description",
+            content:
+              profile.bio ||
+              `Check out ${profile.displayName || profile.username}'s profile!`,
+          },
+          {
+            property: "og:image",
+            content:
+              profile.photoURL ||
+              `${window.location.origin}/placeholder.svg?height=400&width=400&query=profile`,
+          },
+          {
+            property: "og:url",
+            content: `${window.location.origin}/profile/${uid}`,
+          },
+          { property: "og:type", content: "profile" },
+          { name: "twitter:card", content: "summary_large_image" },
+          {
+            name: "twitter:title",
+            content: `${profile.displayName || profile.username}'s Profile`,
+          },
+          {
+            name: "twitter:description",
+            content:
+              profile.bio ||
+              `Check out ${profile.displayName || profile.username}'s profile!`,
+          },
+          {
+            name: "twitter:image",
+            content:
+              profile.photoURL ||
+              `${window.location.origin}/placeholder.svg?height=400&width=400&query=profile`,
+          },
+        ];
+
+        // Add new meta tags to head
+        metaTags.forEach((tag) => {
+          const meta = document.createElement("meta");
+          if (tag.property) meta.setAttribute("property", tag.property);
+          if (tag.name) meta.setAttribute("name", tag.name);
+          meta.setAttribute("content", tag.content);
+          document.head.appendChild(meta);
+        });
+      };
+
+      updateMetaTags();
+    }
+  }, [profile, uid]);
+
   const now = new Date();
   const weekDates = useMemo(() => getWeekDates(selectedDate), [selectedDate]);
   const monthLabel = useMemo(
@@ -286,6 +353,9 @@ export default function ProfilePage() {
         backgroundRepeat: "no-repeat",
       }}
     >
+      <Head>
+        <title>{`${displayName || username}'s Profile`}</title>
+      </Head>
       <section className="py-4 bg-[#6CD3FF]">
         <div className="flex items-center gap-4 px-6">
           <div className="flex-shrink-0">
