@@ -19,6 +19,7 @@ import {
 import { auth } from "@/lib/firebase/client"
 import { cn } from "@/lib/utils"
 import { getUserProfile, type UserProfile } from "@/lib/firebase/firestore"
+import { toggleFollow, listenToFollowingStatus } from "@/lib/firebase/follows"
 
 function timeAgo(date: Date | null) {
   if (!date) return "now"
@@ -85,6 +86,7 @@ export default function ReplyPage() {
     UserProfile,
     "displayName" | "username" | "photoURL"
   > | null>(null)
+  const [followingMap, setFollowingMap] = useState<Record<string, boolean>>({})
 
   // Lightbox
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -189,6 +191,16 @@ export default function ReplyPage() {
     }
   }, [auth?.currentUser?.uid])
 
+  useEffect(() => {
+    if (!auth?.currentUser?.uid) {
+      setFollowingMap({})
+      return
+    }
+
+    const unsubscribe = listenToFollowingStatus(auth.currentUser.uid, setFollowingMap)
+    return () => unsubscribe()
+  }, [auth?.currentUser?.uid])
+
   async function ensureAuthed(): Promise<true | null> {
     if (auth?.currentUser) return true
     router.push("/sign-in")
@@ -221,6 +233,17 @@ export default function ReplyPage() {
       setReplyText("")
     } finally {
       setIsSending(false)
+    }
+  }
+
+  async function onToggleFollow(userId: string) {
+    const ok = await ensureAuthed()
+    if (!ok) return
+    try {
+      const result = await toggleFollow(auth!.currentUser!.uid, userId)
+      setFollowingMap((prev) => ({ ...prev, [userId]: result }))
+    } catch (e) {
+      console.error("toggleFollow failed", e)
     }
   }
 
@@ -279,8 +302,18 @@ export default function ReplyPage() {
           {post ? (
             <div className="flex gap-3 pb-4 border-b border-gray-200">
               <Avatar
-                className="h-12 w-12 rounded-full ring-2 ring-transparent hover:ring-[#50B0FF] hover:bg-[#50B0FF] transition-colors"
+                onClick={() => router.push(`/profile/${post.uid}`)}
+                className="rounded-full ring-2 ring-transparent hover:ring-[#50B0FF] hover:bg-[#50B0FF] transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#50B0FF] focus:ring-offset-2 w-14 h-14"
                 style={{ boxShadow: "0 4px 0 #50B0FF" }}
+                tabIndex={0}
+                role="button"
+                aria-label={`View ${author?.displayName || "User"}'s profile`}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault()
+                    router.push(`/profile/${post.uid}`)
+                  }
+                }}
               >
                 <AvatarImage
                   src={author?.photoURL || "/placeholder.svg?height=48&width=48"}
@@ -291,10 +324,12 @@ export default function ReplyPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                   <span className="font-semibold text-[rgba(125,71,185,1)]">{author?.displayName || "User"}</span>
-                  
+
                   <span className="text-gray-400">· {timeAgo(post.createdAt)}</span>
                 </div>
-                <p className="mt-1 whitespace-pre-wrap break-words text-[rgba(82,30,130,1)]/80">{post.content}</p>
+                <p className="mt-1 whitespace-pre-wrap break-words text-[rgba(82,30,130,1)]/80 text-sm">
+                  {post.content}
+                </p>
 
                 {/* Album-aware media */}
                 <div className="mt-3">
@@ -336,7 +371,7 @@ export default function ReplyPage() {
         <section className="mt-3 pb-4 border-b border-gray-200">
           <div className="flex gap-3">
             <Avatar
-              className="h-12 w-12 rounded-full ring-2 ring-transparent hover:ring-[#50B0FF] hover:bg-[#50B0FF] transition-colors"
+              className="rounded-full ring-2 ring-transparent hover:ring-[#50B0FF] hover:bg-[#50B0FF] transition-colors w-14 h-14"
               style={{ boxShadow: "0 4px 0 #50B0FF" }}
             >
               <AvatarImage
@@ -395,22 +430,79 @@ export default function ReplyPage() {
               const photoURL = replyAuthor?.photoURL || "/placeholder.svg?height=40&width=40"
 
               return (
-                <li key={r.id} className="py-4">
+                <li key={r.id} className="py-5 border-none">
                   <div className="flex gap-3">
                     <Avatar
-                      className="h-12 w-12 rounded-full ring-2 ring-transparent hover:ring-[#50B0FF] hover:bg-[#50B0FF] transition-colors"
+                      onClick={() => router.push(`/profile/${r.uid}`)}
+                      className="w-14 h-14 rounded-full ring-2 ring-transparent hover:ring-[#50B0FF] hover:bg-[#50B0FF] transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#50B0FF] focus:ring-offset-2"
                       style={{ boxShadow: "0 4px 0 #50B0FF" }}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`View ${displayName}'s profile`}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault()
+                          router.push(`/profile/${r.uid}`)
+                        }
+                      }}
                     >
                       <AvatarImage src={photoURL || "/placeholder.svg"} alt={`${displayName} avatar`} />
                       <AvatarFallback>{displayName.slice(0, 1)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 text-sm">
-                        <span className="font-semibold text-[rgba(125,71,185,1)]">{displayName}</span>
-                        
-                        <span className="text-gray-400">· {timeAgo(r.createdAt)}</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="font-semibold text-[rgba(125,71,185,1)]">{displayName}</span>
+                          <span className="text-gray-400">· {timeAgo(r.createdAt)}</span>
+                        </div>
+
+                        <button
+                          className={cn(
+                            "rounded-full text-xs font-semibold transition-colors flex-shrink-0 py-1.5 px-3",
+                            r.uid === auth?.currentUser?.uid
+                              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                              : followingMap[r.uid]
+                                ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                : "bg-[rgba(108,211,255,1)] text-white hover:bg-[#50B0FF]",
+                          )}
+                          style={{ boxShadow: "0 2px 0 #50B0FF" }}
+                          onClick={() => r.uid !== auth?.currentUser?.uid && onToggleFollow(r.uid)}
+                          disabled={r.uid === auth?.currentUser?.uid}
+                          aria-label={
+                            r.uid === auth?.currentUser?.uid
+                              ? "Cannot follow yourself"
+                              : followingMap[r.uid]
+                                ? "Unfollow user"
+                                : "Follow user"
+                          }
+                        >
+                          {r.uid === auth?.currentUser?.uid ? "Follow" : followingMap[r.uid] ? "Following" : "Follow"}
+                        </button>
                       </div>
-                      <p className="mt-1 whitespace-pre-wrap break-words text-[rgba(82,30,130,1)]/80">{r.content}</p>
+
+                      <p className="mt-1 whitespace-pre-wrap break-words text-[rgba(82,30,130,1)]/80 text-sm">
+                        {r.content}
+                      </p>
+
+                      {/* Actions section with like functionality */}
+                      <div className="mt-2 flex items-center gap-6 text-gray-500 text-sm ml-2">
+                        <button
+                          className="flex items-center gap-1 hover:text-gray-700"
+                          aria-label="Reply to reply"
+                          onClick={() => console.log("Reply to reply", r.id)}
+                        >
+                          <MessageCircle className="h-5 w-5" />
+                          <span className="tabular-nums">0</span>
+                        </button>
+                        <button
+                          className="flex items-center gap-1 hover:text-gray-700 text-gray-500"
+                          aria-label="Like reply"
+                          onClick={() => console.log("Like reply", r.id)}
+                        >
+                          <Heart className="h-5 w-5" />
+                          <span className="tabular-nums">0</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </li>

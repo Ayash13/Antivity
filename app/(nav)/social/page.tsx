@@ -12,7 +12,9 @@ import { auth } from "@/lib/firebase/client"
 import { cn } from "@/lib/utils"
 import { getLatestPathSession, type PathSessionDoc } from "@/lib/firebase/path-logs"
 import { getUserProfile, type UserProfile } from "@/lib/firebase/firestore"
+import { toggleFollow, listenToFollowingStatus } from "@/lib/firebase/follows"
 import Image from "next/image"
+import { db, getDocs, collection } from "@/lib/firebase/client"
 
 function timeAgo(date: Date | null) {
   if (!date) return "now"
@@ -100,6 +102,7 @@ export default function SocialPage() {
 
   // Per-post like state for current user
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({})
+  const [followingMap, setFollowingMap] = useState<Record<string, boolean>>({})
   const [authorMap, setAuthorMap] = useState<
     Record<string, Pick<UserProfile, "displayName" | "username" | "photoURL">>
   >({})
@@ -113,6 +116,11 @@ export default function SocialPage() {
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxImages, setLightboxImages] = useState<string[]>([])
   const [lightboxIndex, setLightboxIndex] = useState(0)
+
+  // User search functionality
+  const [users, setUsers] = useState<any[]>([])
+  const [searchResults, setSearchResults] = useState<{ posts: any[]; users: any[] }>({ posts: [], users: [] })
+  const [activeSearchTab, setActiveSearchTab] = useState<"people" | "posts">("people")
 
   useEffect(() => {
     let cancelled = false
@@ -216,16 +224,68 @@ export default function SocialPage() {
     }
   }, [composerOpen])
 
+  useEffect(() => {
+    if (!auth?.currentUser?.uid) {
+      setFollowingMap({})
+      return
+    }
+
+    const unsubscribe = listenToFollowingStatus(auth.currentUser.uid, setFollowingMap)
+    return () => unsubscribe()
+  }, [auth?.currentUser?.uid])
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const usersSnapshot = await getDocs(collection(db, "users"))
+        const usersData = usersSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        setUsers(usersData)
+      } catch (error) {
+        console.error("Error fetching users:", error)
+      }
+    }
+
+    fetchUsers()
+  }, [])
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return posts
-    return posts.filter(
+    if (!q) {
+      setSearchResults({ posts: [], users: [] })
+      return posts
+    }
+
+    const filteredPosts = posts.filter(
       (p) =>
         (p.content?.toLowerCase() || "").includes(q) ||
         (p.authorName?.toLowerCase() || "").includes(q) ||
         (p.authorHandle?.toLowerCase() || "").includes(q),
     )
-  }, [posts, query])
+
+    const filteredUsers = users.filter(
+      (u) =>
+        (u.displayName?.toLowerCase() || "").includes(q) ||
+        (u.username?.toLowerCase() || "").includes(q) ||
+        (u.email?.toLowerCase() || "").includes(q) ||
+        (u.bio?.toLowerCase() || "").includes(q),
+    )
+
+    setSearchResults({ posts: filteredPosts, users: filteredUsers })
+    return filteredPosts
+  }, [posts, users, query])
+
+  const selectedIndices = useMemo(
+    () =>
+      Object.entries(selectedMap)
+        .filter(([, v]) => v)
+        .map(([k]) => Number(k)),
+    [selectedMap],
+  )
+
+  const canPost = useMemo(() => selectedIndices.length > 0 && !isPosting, [selectedIndices.length, isPosting])
 
   async function ensureAuthed(): Promise<true | null> {
     if (auth?.currentUser) return true
@@ -273,16 +333,6 @@ export default function SocialPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [composerOpen])
 
-  const selectedIndices = useMemo(
-    () =>
-      Object.entries(selectedMap)
-        .filter(([, v]) => v)
-        .map(([k]) => Number(k)),
-    [selectedMap],
-  )
-
-  const canPost = useMemo(() => selectedIndices.length > 0 && !isPosting, [selectedIndices.length, isPosting])
-
   async function onToggleLike(postId: string) {
     const ok = await ensureAuthed()
     if (!ok) return
@@ -291,6 +341,17 @@ export default function SocialPage() {
       setLikedMap((prev) => ({ ...prev, [postId]: result }))
     } catch (e) {
       console.error("toggleLike failed", e)
+    }
+  }
+
+  async function onToggleFollow(userId: string) {
+    const ok = await ensureAuthed()
+    if (!ok) return
+    try {
+      const result = await toggleFollow(auth!.currentUser!.uid, userId)
+      setFollowingMap((prev) => ({ ...prev, [userId]: result }))
+    } catch (e) {
+      console.error("toggleFollow failed", e)
     }
   }
 
@@ -458,6 +519,117 @@ export default function SocialPage() {
         </div>
       </div>
 
+      {/* Search Results */}
+      {query.trim() && (searchResults.users.length > 0 || searchResults.posts.length > 0) && (
+        <div className="mt-6 mx-4 bg-white rounded-2xl shadow-lg border-0" style={{ boxShadow: "0 8px 0 #50B0FF" }}>
+          <div className="flex bg-gray-50 rounded-t-2xl p-2 gap-2">
+            <button
+              onClick={() => setActiveSearchTab("people")}
+              className={cn(
+                "flex-1 px-4 py-3 text-sm font-bold transition-all duration-200 rounded-xl relative",
+                activeSearchTab === "people"
+                  ? "text-white bg-[#50B0FF] shadow-md"
+                  : "text-gray-600 hover:text-gray-800 hover:bg-white hover:shadow-sm",
+              )}
+              style={activeSearchTab === "people" ? { boxShadow: "0 3px 0 #3A8FD9" } : {}}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <div
+                  className={cn("w-2 h-2 rounded-full", activeSearchTab === "people" ? "bg-white" : "bg-[#50B0FF]")}
+                ></div>
+                <span>People</span>
+                <span
+                  className={cn(
+                    "text-xs px-2 py-1 rounded-full font-semibold",
+                    activeSearchTab === "people" ? "bg-white/20 text-white" : "bg-[#50B0FF]/10 text-[#50B0FF]",
+                  )}
+                >
+                  {searchResults.users.length}
+                </span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveSearchTab("posts")}
+              className={cn(
+                "flex-1 px-4 py-3 text-sm font-bold transition-all duration-200 rounded-xl relative",
+                activeSearchTab === "posts"
+                  ? "text-white bg-[#6CD3FF] shadow-md"
+                  : "text-gray-600 hover:text-gray-800 hover:bg-white hover:shadow-sm",
+              )}
+              style={activeSearchTab === "posts" ? { boxShadow: "0 3px 0 #4AB8E6" } : {}}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <div
+                  className={cn("w-2 h-2 rounded-full", activeSearchTab === "posts" ? "bg-white" : "bg-[#6CD3FF]")}
+                ></div>
+                <span>Posts</span>
+                <span
+                  className={cn(
+                    "text-xs px-2 py-1 rounded-full font-semibold",
+                    activeSearchTab === "posts" ? "bg-white/20 text-white" : "bg-[#6CD3FF]/10 text-[#6CD3FF]",
+                  )}
+                >
+                  {searchResults.posts.length}
+                </span>
+              </div>
+            </button>
+          </div>
+
+          {activeSearchTab === "people" && searchResults.users.length > 0 && (
+            <div className="p-6">
+              <div className="space-y-3">
+                {searchResults.users.slice(0, 5).map((user) => (
+                  <div
+                    key={user.id}
+                    onClick={() => router.push(`/profile/${user.uid || user.id}`)}
+                    className="flex items-center gap-4 p-4 rounded-xl cursor-pointer"
+                  >
+                    <Avatar className="h-14 w-14 ring-2 ring-white shadow-lg">
+                      <AvatarImage src={user.photoURL || "/placeholder.svg"} alt={user.displayName} />
+                      <AvatarFallback className="bg-gradient-to-br from-[#50B0FF] to-[#6CD3FF] text-white text-lg font-semibold">
+                        {user.displayName?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-gray-900 truncate text-lg">{user.displayName || "Unknown User"}</p>
+                      <p className="text-sm text-[#50B0FF] font-medium truncate">
+                        @{user.username || user.email?.split("@")[0] || "user"}
+                      </p>
+                      {user.bio && <p className="text-sm text-gray-600 truncate mt-1 leading-relaxed">{user.bio}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeSearchTab === "posts" && searchResults.posts.length > 0 && (
+            <div className="p-6">
+              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-100">
+                <p className="text-sm text-gray-700 font-medium">
+                  Found {searchResults.posts.length} post{searchResults.posts.length !== 1 ? "s" : ""} matching your
+                  search
+                </p>
+                <p className="text-xs text-gray-500 mt-1">Scroll down to see posts in the main feed</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {query.trim() && searchResults.users.length === 0 && searchResults.posts.length === 0 && (
+        <div
+          className="mt-6 mx-4 bg-white rounded-2xl shadow-lg border-0 p-8 text-center"
+          style={{ boxShadow: "0 8px 0 #50B0FF" }}
+        >
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search className="w-8 h-8 text-gray-400" />
+          </div>
+          <p className="text-gray-600 font-medium mb-2">No results found</p>
+          <p className="text-sm text-gray-500">Try searching for different keywords or check your spelling</p>
+        </div>
+      )}
+
       {/* Feed */}
       <div className="max-w-xl mx-auto px-4 pb-24">
         <ul className="divide-y divide-gray-100">
@@ -467,8 +639,18 @@ export default function SocialPage() {
               <li key={p.id} className="py-5 border-none">
                 <div className="flex gap-3">
                   <Avatar
-                    className="h-12 w-12 rounded-full ring-2 ring-transparent hover:ring-[#50B0FF] hover:bg-[#50B0FF] transition-colors"
+                    className="rounded-full ring-2 ring-transparent hover:ring-[#50B0FF] hover:bg-[#50B0FF] transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#50B0FF] focus:ring-offset-2 w-14 h-14"
                     style={{ boxShadow: "0 4px 0 #50B0FF" }}
+                    onClick={() => router.push(`/profile/${p.uid}`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault()
+                        router.push(`/profile/${p.uid}`)
+                      }
+                    }}
+                    aria-label={`View ${authorMap[p.uid]?.displayName || "User"}'s profile`}
                   >
                     <AvatarImage
                       src={authorMap[p.uid]?.photoURL || "/placeholder.svg?height=48&width=48"}
@@ -478,17 +660,36 @@ export default function SocialPage() {
                   </Avatar>
 
                   <div className="flex-1 min-w-0">
-                    {/* Header row */}
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="font-semibold text-[rgba(125,71,185,1)]">
-                        {authorMap[p.uid]?.displayName || "User"}
-                      </span>
-                      
-                      <span className="text-gray-400">· {timeAgo(p.createdAt)}</span>
+                    {/* Header row with follow button */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-semibold text-[rgba(125,71,185,1)]">
+                          {authorMap[p.uid]?.displayName || "User"}
+                        </span>
+                        <span className="text-gray-400">· {timeAgo(p.createdAt)}</span>
+                      </div>
+
+                      {p.uid !== auth?.currentUser?.uid && (
+                        <button
+                          className={cn(
+                            "rounded-full text-xs font-semibold transition-colors flex-shrink-0 py-1.5 px-3",
+                            followingMap[p.uid]
+                              ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                              : "bg-[rgba(108,211,255,1)] text-white hover:bg-[#50B0FF]",
+                          )}
+                          style={{ boxShadow: "0 2px 0 #50B0FF" }}
+                          onClick={() => onToggleFollow(p.uid)}
+                          aria-label={followingMap[p.uid] ? "Unfollow user" : "Follow user"}
+                        >
+                          {followingMap[p.uid] ? "Following" : "Follow"}
+                        </button>
+                      )}
                     </div>
 
                     {/* Content preview */}
-                    <p className="mt-1 whitespace-pre-wrap break-words text-[rgba(174,121,235,1)]">{p.content}</p>
+                    <p className="mt-1 whitespace-pre-wrap break-words text-[rgba(174,121,235,1)] tracking-normal text-sm">
+                      {p.content}
+                    </p>
 
                     {/* Media panel: album-aware */}
                     <div className="mt-2">
@@ -502,7 +703,7 @@ export default function SocialPage() {
                         aria-label="Reply"
                         onClick={() => goToReply(p.id)}
                       >
-                        <MessageCircle className="h-5 w-5" />
+                        <MessageCircle className="h-6 w-6" />
                         <span className="tabular-nums">{p.repliesCount}</span>
                       </button>
                       <button
@@ -513,7 +714,7 @@ export default function SocialPage() {
                         aria-label="Like"
                         onClick={() => onToggleLike(p.id)}
                       >
-                        <Heart className={cn("h-5 w-5", likedMap[p.id] ? "fill-[#F64F63] text-[#F64F63]" : "")} />
+                        <Heart className={cn("h-6 w-6", likedMap[p.id] ? "fill-[#F64F63] text-[#F64F63]" : "")} />
                         <span className="tabular-nums">{p.likesCount}</span>
                       </button>
                     </div>
@@ -522,7 +723,7 @@ export default function SocialPage() {
               </li>
             )
           })}
-          {filtered.length === 0 && <li className="py-12 text-center text-gray-500">No posts match “{query}”.</li>}
+          {filtered.length === 0 && <li className="py-12 text-center text-gray-500">No posts match "{query}".</li>}
         </ul>
       </div>
 

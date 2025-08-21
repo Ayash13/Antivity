@@ -30,7 +30,8 @@ export default function WithNavLayout({ children }: { children: React.ReactNode 
   const hideNav =
     pathname === "/profile/edit" ||
     Boolean(pathname?.startsWith("/profile/photos")) ||
-    Boolean(pathname?.startsWith("/social/favorites"))
+    Boolean(pathname?.startsWith("/social/favorites")) ||
+    Boolean(pathname?.match(/^\/profile\/[^/]+$/))
 
   return (
     <>

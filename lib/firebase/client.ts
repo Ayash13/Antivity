@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app"
 import { getAuth } from "firebase/auth"
-import { getFirestore } from "firebase/firestore"
+import { getFirestore, getDocs, collection } from "firebase/firestore"
 import { getStorage } from "firebase/storage"
 
 const firebaseConfig = {
@@ -39,4 +39,4 @@ const auth = app ? getAuth(app) : null
 const db = app ? getFirestore(app) : null
 const storage = app ? getStorage(app) : null
 
-export { app, auth, db, storage }
+export { app, auth, db, storage, getDocs, collection }

@@ -1,19 +1,19 @@
-import type React from "react";
-import type { Metadata, Viewport } from "next";
-import { Ubuntu } from "next/font/google";
-import "./globals.css";
-import { AuthProvider } from "@/context/auth-context";
-import { SplashScreen } from "@/components/splash-screen";
-import { PWAStatusBar } from "@/components/pwa-status-bar";
+import type React from "react"
+import type { Metadata, Viewport } from "next"
+import { Ubuntu } from "next/font/google"
+import "./globals.css"
+import { AuthProvider } from "@/context/auth-context"
+import { SplashScreen } from "@/components/splash-screen"
+import { PWAStatusBar } from "@/components/pwa-status-bar"
 
 const ubuntu = Ubuntu({
   subsets: ["latin"],
   weight: ["300", "400", "500", "700"],
   display: "swap",
-});
+})
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://antivity.vercel.app"),
+  metadataBase: new URL("https://antivity.app"), // change if you have a different domain
   applicationName: "Antivity",
   title: {
     default: "Antivity — Walk with purpose",
@@ -21,16 +21,7 @@ export const metadata: Metadata = {
   },
   description:
     "Antivity gives more purpose to your walk. Discover thing, notice your surroundings, and make every step more meaningful.",
-  keywords: [
-    "Antivity",
-    "walking",
-    "walk",
-    "mindful walking",
-    "health",
-    "fitness",
-    "outdoor",
-    "habit",
-  ],
+  keywords: ["Antivity", "walking", "walk", "mindful walking", "health", "fitness", "outdoor", "habit"],
   authors: [{ name: "Antivity" }],
   creator: "Antivity",
   publisher: "Antivity",
@@ -53,7 +44,7 @@ export const metadata: Metadata = {
     title: "Antivity — Walk with purpose",
     description:
       "Antivity gives more purpose to your walk. Discover thing, notice your surroundings, and make every step more meaningful.",
-    url: "https://antivity.vercel.app",
+    url: "https://antivity.app",
     images: [
       {
         url: "/logo/antjvity-logo.webp",
@@ -71,7 +62,8 @@ export const metadata: Metadata = {
     images: ["/logo/antjvity-logo.webp"],
   },
   category: "health",
-};
+    generator: 'v0.app'
+}
 
 export const viewport: Viewport = {
   themeColor: "#6CD3FF",
@@ -80,22 +72,19 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-};
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
     <html lang="en" className={ubuntu.className}>
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta
-          name="apple-mobile-web-app-status-bar-style"
-          content="black-translucent"
-        />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Antivity" />
         <meta name="msapplication-TileColor" content="#6CD3FF" />
         <meta name="msapplication-tap-highlight" content="no" />
@@ -125,5 +114,5 @@ export default function RootLayout({
         />
       </body>
     </html>
-  );
+  )
 }

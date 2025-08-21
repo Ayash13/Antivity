@@ -1,84 +1,82 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import Image from "next/image";
-import { AuthGuard } from "@/components/auth-guard";
+import { useEffect, useState } from "react"
+import { useParams, useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import Image from "next/image"
+import { AuthGuard } from "@/components/auth-guard"
 
 interface JournalEntry {
-  id: string;
-  resultImageUrl: string;
-  storyTitle: string;
-  storyContent: string;
-  totalDistance: number;
-  createdAt: Date;
-  sessionId: string;
+  id: string
+  resultImageUrl: string
+  storyTitle: string
+  storyContent: string
+  totalDistance: number
+  createdAt: Date
+  sessionId: string
 }
 
 export default function JournalDetailPage() {
-  const params = useParams<{ journalId: string }>();
-  const journalId = params?.journalId;
-  const router = useRouter();
+  const params = useParams<{ journalId: string }>()
+  const journalId = params?.journalId
+  const router = useRouter()
 
-  const [journal, setJournal] = useState<JournalEntry | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [downloading, setDownloading] = useState(false);
+  const [journal, setJournal] = useState<JournalEntry | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
-    const journalData = sessionStorage.getItem(`journal-${journalId}`);
+    const journalData = sessionStorage.getItem(`journal-${journalId}`)
     if (journalData) {
-      const parsedJournal = JSON.parse(journalData);
+      const parsedJournal = JSON.parse(journalData)
       if (typeof parsedJournal.createdAt === "string") {
-        parsedJournal.createdAt = new Date(parsedJournal.createdAt);
+        parsedJournal.createdAt = new Date(parsedJournal.createdAt)
       }
-      setJournal(parsedJournal);
+      setJournal(parsedJournal)
     }
-    setLoading(false);
-  }, [journalId]);
+    setLoading(false)
+  }, [journalId])
 
   const formatDistance = (distance: number): string => {
     if (distance < 1) {
-      return `${Math.round(distance * 1000)}m`;
+      return `${Math.round(distance * 1000)}m`
     }
-    return `${distance.toFixed(1)}km`;
-  };
+    return `${distance.toFixed(1)}km`
+  }
 
   const handleDownload = async () => {
-    if (!journal?.resultImageUrl) return;
+    if (!journal?.resultImageUrl) return
 
-    setDownloading(true);
+    setDownloading(true)
     try {
       // Try direct download first (works for some Firebase Storage configurations)
-      const link = document.createElement("a");
-      link.href = journal.resultImageUrl;
-      link.download = `${journal.storyTitle || "journal"}-${
-        journal.createdAt.toISOString().split("T")[0]
-      }.jpg`;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
+      const link = document.createElement("a")
+      link.href = journal.resultImageUrl
+      link.download = `${journal.storyTitle || "journal"}-${journal.createdAt.toISOString().split("T")[0]}.jpg`
+      link.target = "_blank"
+      link.rel = "noopener noreferrer"
 
       // For Firebase Storage, we need to add download parameter to force download
-      const url = new URL(journal.resultImageUrl);
-      url.searchParams.set("response-content-disposition", "attachment");
-      link.href = url.toString();
+      const url = new URL(journal.resultImageUrl)
+      url.searchParams.set("response-content-disposition", "attachment")
+      link.href = url.toString()
 
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
     } catch (error) {
-      console.error("Download failed:", error);
+      console.error("Download failed:", error)
       // Fallback: open in new tab if direct download fails
       try {
-        window.open(journal.resultImageUrl, "_blank");
+        window.open(journal.resultImageUrl, "_blank")
       } catch (fallbackError) {
-        console.error("Fallback failed:", fallbackError);
-        alert("Unable to download image. Please try again or contact support.");
+        console.error("Fallback failed:", fallbackError)
+        alert("Unable to download image. Please try again or contact support.")
       }
     } finally {
-      setDownloading(false);
+      setDownloading(false)
     }
-  };
+  }
 
   return (
     <AuthGuard redirectTo="/">
@@ -116,7 +114,7 @@ export default function JournalDetailPage() {
                   onClick={handleDownload}
                   variant="ghost"
                   size="icon"
-                  className="h-10 w-10 rounded-xl bg-[rgba(255,204,25,1)] hover:bg-[#E9B800] text-white disabled:opacity-50"
+                  className="h-10 w-10 rounded-xl bg-[rgba(255,204,25,1)] hover:bg-[#E9B800] text-white disabled:opacity-50 transition-colors duration-200"
                   aria-label="Download journal"
                   style={{ boxShadow: "0 3px 0 #50B0FF" }}
                   disabled={downloading || !journal?.resultImageUrl}
@@ -124,18 +122,13 @@ export default function JournalDetailPage() {
                   {downloading ? (
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    >
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="7,10 12,15 17,10" />
-                      <line x1="12" y1="15" x2="12" y2="3" />
-                    </svg>
+                    <Image
+                      src="/icon/download.svg"
+                      alt="Download"
+                      width={24}
+                      height={24}
+                      className="filter brightness-0 invert"
+                    />
                   )}
                 </Button>
               </div>
@@ -145,46 +138,27 @@ export default function JournalDetailPage() {
 
         <div className="max-w-xl mx-auto px-4">
           {loading ? (
-            <div className="h-[60vh] flex items-center justify-center text-gray-500">
-              Loading journal...
-            </div>
+            <div className="h-[60vh] flex items-center justify-center text-gray-500">Loading journal...</div>
           ) : !journal ? (
             <div className="rounded-2xl bg-white/70 text-center text-sm text-[#7D47B9] py-8 mt-6">
               Journal entry not found
             </div>
           ) : (
             <div className="mt-4 space-y-6">
-              <div className="rounded-2xl overflow-hidden bg-gray-100 border border-gray-200">
+              <div className="rounded-[3.5rem] overflow-hidden bg-gray-100">
                 <div className="relative w-full aspect-[17/30]">
                   <img
-                    src={
-                      journal.resultImageUrl ||
-                      "/placeholder.svg?height=800&width=600&query=journal"
-                    }
+                    src={journal.resultImageUrl || "/placeholder.svg?height=800&width=600&query=journal"}
                     alt={journal.storyTitle}
                     className="absolute inset-0 w-full h-full object-cover"
                   />
-                  <div className="absolute left-2 bottom-2">
-                    <span
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[rgba(108,211,255,1)] text-white"
-                      style={{ boxShadow: "0px 3px 0px 0px #50B0FF" }}
-                    >
-                      {formatDistance(journal.totalDistance)}
-                    </span>
-                  </div>
+                  <div className="absolute left-2 bottom-2"></div>
                 </div>
               </div>
 
-              <div
-                className="bg-white/80 rounded-2xl p-6 space-y-4"
-                style={{ boxShadow: "0 4px 0 #50B0FF" }}
-              >
-                <h1 className="text-2xl font-bold text-[#7D47B9]">
-                  {journal.storyTitle}
-                </h1>
-                <p className="text-gray-700 leading-relaxed">
-                  {journal.storyContent}
-                </p>
+              <div className="bg-white/80 rounded-2xl p-6 space-y-4" style={{ boxShadow: "0 4px 0 #50B0FF" }}>
+                <h1 className="text-2xl font-bold text-[#7D47B9]">{journal.storyTitle}</h1>
+                <p className="text-gray-700 leading-relaxed">{journal.storyContent}</p>
                 <div className="text-sm text-gray-500 pt-2 border-t border-gray-200">
                   {journal.createdAt.toLocaleDateString("en-US", {
                     weekday: "long",
@@ -199,5 +173,5 @@ export default function JournalDetailPage() {
         </div>
       </main>
     </AuthGuard>
-  );
+  )
 }
